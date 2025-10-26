@@ -1,1 +1,39 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Giriş Yap</title>
+  <style>
+    body{font-family:Arial,sans-serif;background:#0d0d0d;color:#fff;display:flex;align-items:center;justify-content:center;height:100vh;margin:0}
+    .card{background:#1a1a1a;padding:24px 28px;border-radius:14px;box-shadow:0 0 30px rgba(0,0,0,.35);width:min(420px,90vw)}
+    h1{margin:0 0 14px}
+    input{width:100%;padding:12px;border-radius:10px;border:1px solid #333;background:#111;color:#fff;margin:8px 0}
+    button{width:100%;padding:12px;border:none;border-radius:10px;background:#ff0077;color:#fff;font-weight:700;cursor:pointer}
+    button:hover{background:#ff3399}
+    a{color:#ffd166}
+    .flash{margin:8px 0;color:#ffd166}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Giriş Yap</h1>
 
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, msg in messages %}
+          <div class="flash">{{ msg }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <form method="POST">
+      <input type="email" name="email" placeholder="E-posta" required>
+      <input type="password" name="password" placeholder="Parola" required>
+      <button type="submit">Giriş Yap</button>
+    </form>
+    <p>Hesabın yok mu? <a href="{{ url_for('register') }}">Kayıt ol</a></p>
+    <p><a href="{{ url_for('home') }}">← Ana sayfa</a></p>
+  </div>
+</body>
+</html>
