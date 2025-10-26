@@ -1,1 +1,20 @@
-
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel</title>
+  <style>
+    body{font-family:Arial,sans-serif;background:#0d0d0d;color:#fff;text-align:center;margin:0;padding:40px}
+    a{color:#ffd166}
+    .wrap{max-width:720px;margin:0 auto}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Merhaba, {{ user.username }} 👋</h1>
+    <p>Burada “sır ekleme / sırları görme” gibi sayfaları bağlayacağız.</p>
+    <p><a href="{{ url_for('logout') }}">Çıkış Yap</a> • <a href="{{ url_for('home') }}">Ana sayfa</a></p>
+  </div>
+</body>
+</html>
