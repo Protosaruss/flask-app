@@ -1,38 +1,42 @@
-from flask import Flask, render_template, request, redirect, url_for
-from flask_sqlalchemy import SQLAlchemy
+from flask import Flask, render_template, request
+import random
 
 app = Flask(__name__)
 
-# --- Veritabanı bağlantısı ---
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-db = SQLAlchemy(app)
+# --- Anonim isim oluşturucu ---
+anon_prefixes = ["Mavi", "Gizli", "Karanlık", "Tatlı", "Uçan", "Sır", "Gece", "Rüya", "Gölge", "Sessiz"]
+anon_suffixes = ["Kuş", "Yıldız", "Kalp", "Bulut", "Kedi", "Düş", "Fısıltı", "Kurt", "Ay", "Deniz"]
 
-# --- Kullanıcı modeli ---
-class User(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(50), nullable=False)
-    email = db.Column(db.String(100), unique=True, nullable=False)
-    password = db.Column(db.String(100), nullable=False)
+def generate_anon_name():
+    return random.choice(anon_prefixes) + random.choice(anon_suffixes)
 
-# --- Ana sayfa ---
-@app.route("/", methods=["GET", "POST"])
+# --- Ana sayfa (kayıt ekranı) ---
+@app.route("/")
 def home():
-    if request.method == "POST":
-        username = request.form["username"]
-        email = request.form["email"]
-        password = request.form["password"]
-
-        # Yeni kullanıcı oluştur
-        new_user = User(username=username, email=email, password=password)
-        db.session.add(new_user)
-        db.session.commit()
-
-        return redirect(url_for("home"))
-
     return render_template("index.html")
 
+# --- Kayıt formu gönderimi ---
+@app.route("/register", methods=["POST"])
+def register():
+    username = request.form["username"]
+    email = request.form["email"]
+    password = request.form["password"]
+    gender = request.form["gender"]
+
+    # Rastgele anonim isim oluştur
+    anon_name = generate_anon_name()
+
+    # Cinsiyet simgesi seçimi
+    icons = {"male": "👨", "female": "👩", "other": "🧑"}
+    gender_icon = icons.get(gender, "🧑")
+
+    # Dashboard’a yönlendir
+    return render_template("dashboard.html", anon_name=anon_name, gender_icon=gender_icon)
+
+# --- Dashboard (giriş sonrası ekran) ---
+@app.route("/dashboard")
+def dashboard():
+    return render_template("dashboard.html", anon_name="Anonim", gender_icon="🧑")
+
 if __name__ == "__main__":
-    with app.app_context():
-        db.create_all()  # veritabanını oluşturur
     app.run(debug=True)
