@@ -1,102 +1,75 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session
-from flask_sqlalchemy import SQLAlchemy
-from werkzeug.security import generate_password_hash, check_password_hash
+import os
 
 app = Flask(__name__)
-app.secret_key = "mysecretkey"
+app.secret_key = "supersecretkey"
 
-# --- Veritabanı bağlantısı ---
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///users.db"
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-db = SQLAlchemy(app)
+# --- Render ve Flask için dizin ayarları ---
+app.template_folder = os.path.join(os.path.dirname(__file__), 'templates')
+app.static_folder = os.path.join(os.path.dirname(__file__), 'static')
 
-# --- Kullanıcı Modeli ---
-class User(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(150), nullable=False)
-    email = db.Column(db.String(150), unique=True, nullable=False)
-    password = db.Column(db.String(150), nullable=False)
-    gender = db.Column(db.String(10))
-    anon_name = db.Column(db.String(150))
+# --- Sahte veri tabanı ---
+users = {}
 
-# --- Ana Sayfa ---
-@app.route("/")
-def index():
-    return render_template("index.html")
+# --- Ana sayfa ---
+@app.route('/')
+def home():
+    return render_template('index.html')
 
-# --- Kayıt Sayfası ---
-@app.route("/register", methods=["GET", "POST"])
+# --- Kayıt sayfası ---
+@app.route('/register', methods=['GET', 'POST'])
 def register():
-    if request.method == "POST":
-        username = request.form["username"]
-        email = request.form["email"]
-        password = request.form["password"]
-        gender = request.form.get("gender")
-        anon_name = request.form.get("anon_name")
+    if request.method == 'POST':
+        username = request.form['username']
+        email = request.form['email']
+        password = request.form['password']
+        gender = request.form['gender']
 
-        # Anonim isim boşsa otomatik oluştur
-        if not anon_name:
-            anon_prefix = "Anon"
-            gender_symbol = "♀" if gender == "Kadın" else "♂" if gender == "Erkek" else "⚧"
-            anon_name = f"{anon_prefix}-{username[:3]}-{gender_symbol}"
+        if username in users:
+            flash("Bu kullanıcı adı zaten alınmış.", "error")
+            return redirect(url_for('register'))
 
-        # Şifreyi hash’le
-        hashed_pw = generate_password_hash(password, method="sha256")
+        users[username] = {"email": email, "password": password, "gender": gender}
+        flash("Kayıt başarılı! Şimdi giriş yapabilirsiniz.", "success")
+        return redirect(url_for('login'))
 
-        # Kullanıcıyı kaydet
-        new_user = User(
-            username=username,
-            email=email,
-            password=hashed_pw,
-            gender=gender,
-            anon_name=anon_name
-        )
-        db.session.add(new_user)
-        db.session.commit()
+    return render_template('register.html')
 
-        flash("Kayıt başarılı! Şimdi giriş yapabilirsin.", "success")
-        return redirect(url_for("login"))
-
-    return render_template("register.html")
-
-# --- Giriş Sayfası ---
-@app.route("/login", methods=["GET", "POST"])
+# --- Giriş sayfası ---
+@app.route('/login', methods=['GET', 'POST'])
 def login():
-    if request.method == "POST":
-        email = request.form["email"]
-        password = request.form["password"]
-        user = User.query.filter_by(email=email).first()
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
 
-        if user and check_password_hash(user.password, password):
-            session["user_id"] = user.id
-            session["anon_name"] = user.anon_name
-            session["gender"] = user.gender
-            flash("Giriş başarılı!", "success")
-            return redirect(url_for("dashboard"))
+        if username in users and users[username]["password"] == password:
+            session['user'] = username
+            return redirect(url_for('dashboard'))
         else:
-            flash("Geçersiz e-posta veya şifre.", "danger")
-    return render_template("login.html")
+            flash("Kullanıcı adı veya şifre hatalı.", "error")
+            return redirect(url_for('login'))
 
-# --- Dashboard ---
-@app.route("/dashboard")
+    return render_template('login.html')
+
+# --- Kullanıcı paneli (Dashboard) ---
+@app.route('/dashboard')
 def dashboard():
-    if "user_id" not in session:
-        flash("Önce giriş yapmalısın!", "warning")
-        return redirect(url_for("login"))
+    if 'user' not in session:
+        return redirect(url_for('login'))
 
-    anon_name = session.get("anon_name", "Anonim")
-    gender = session.get("gender", "Belirsiz")
-    return render_template("dashboard.html", anon_name=anon_name, gender=gender)
+    username = session['user']
+    user_gender = users[username]["gender"]
+    gender_icon = "♂️" if user_gender == "Erkek" else "♀️" if user_gender == "Kadın" else "⚧️"
+
+    return render_template('dashboard.html', username=username, gender_icon=gender_icon)
 
 # --- Çıkış ---
-@app.route("/logout")
+@app.route('/logout')
 def logout():
-    session.clear()
+    session.pop('user', None)
     flash("Çıkış yapıldı.", "info")
-    return redirect(url_for("index"))
+    return redirect(url_for('home'))
 
-# --- Ana Çalıştırma ---
-if __name__ == "__main__":
-    with app.app_context():
-        db.create_all()
-    app.run(host="0.0.0.0", port=5000)
+# --- Uygulama çalıştırma ---
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000)
