@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Secret is Your Secret</title>
+    <style>
+        body {
+            background-color: #0d0d0d;
+            color: #fff;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+        }
+        img {
+            margin-top: 50px;
+            max-width: 400px;
+            border-radius: 20px;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+        }
+        h1 {
+            margin-top: 30px;
+            font-size: 28px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🗝️ My Secret is Your Secret</h1>
+    <img src="{{ url_for('static', filename='muzip.png') }}" alt="Muzip görseli">
+    <p>Render üzerinde çalışan Flask uygulaman başarıyla bağlandı 🎉</p>
+</body>
+</html>
