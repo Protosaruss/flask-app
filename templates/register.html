@@ -6,71 +6,106 @@
   <title>Kayıt Ol - My Secret is Your Secret</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
       background-color: #0d0d0d;
       color: white;
+      font-family: Arial, sans-serif;
       display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
       flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    h1 {
+      font-size: 28px;
+      margin-bottom: 15px;
     }
 
     form {
       background-color: #1a1a1a;
-      padding: 30px;
+      padding: 30px 40px;
       border-radius: 15px;
       box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
-      width: 300px;
-      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      width: 320px;
+    }
+
+    label {
+      margin-bottom: 5px;
+      text-align: left;
+      font-size: 14px;
+      color: #ddd;
     }
 
     input, select {
-      display: block;
-      width: 100%;
+      margin-bottom: 15px;
       padding: 10px;
-      margin: 10px 0;
-      border: none;
       border-radius: 8px;
+      border: none;
       font-size: 16px;
+      outline: none;
+      background-color: #fff;
+      color: #000;
     }
 
     button {
       background-color: #ffcc00;
+      color: #000;
       border: none;
-      padding: 10px 20px;
+      padding: 12px;
+      font-size: 16px;
       border-radius: 8px;
       cursor: pointer;
-      font-weight: bold;
       transition: 0.3s;
+      font-weight: bold;
     }
 
     button:hover {
       background-color: #ffdb4d;
     }
 
-    h1 {
-      margin-bottom: 20px;
+    .link {
+      margin-top: 10px;
+      color: #ffcc00;
+      text-decoration: none;
+      font-size: 14px;
     }
 
-    label {
-      text-align: left;
-      display: block;
-      font-size: 14px;
-      margin-top: 5px;
+    .link:hover {
+      text-decoration: underline;
     }
   </style>
 </head>
 <body>
   <h1>🔐 Kayıt Ol</h1>
+
   <form method="POST" action="/register">
-    <label>Kullanıcı Adı:</label>
-    <input type="text" name="username" required>
+    <label for="username">Kullanıcı Adı</label>
+    <input type="text" id="username" name="username" placeholder="Adınızı girin" required>
 
-    <label>E-posta:</label>
-    <input type="email" name="email" required>
+    <label for="email">E-posta</label>
+    <input type="email" id="email" name="email" placeholder="E-posta adresinizi girin" required>
 
-    <label>Şifre:</label>
-    <input type="password" name="password" required>
+    <label for="password">Şifre</label>
+    <input type="password" id="password" name="password" placeholder="Bir şifre belirleyin" required>
 
-    <label>Cinsiyet:</label>
+    <label for="gender">Cinsiyet</label>
+    <select id="gender" name="gender" required>
+      <option value="">Seçiniz</option>
+      <option value="Erkek">👨 Erkek</option>
+      <option value="Kadın">👩 Kadın</option>
+      <option value="Diğer">⚧ Diğer</option>
+    </select>
+
+    <label for="anon_name">Anonim İsim</label>
+    <input type="text" id="anon_name" name="anon_name" placeholder="örnek: SessizRüzgar">
+
+    <button type="submit">Kayıt Ol</button>
+  </form>
+
+  <a href="/login" class="link">Zaten üye misin? Giriş yap</a>
+</body>
+</html>
