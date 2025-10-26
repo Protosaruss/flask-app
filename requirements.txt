@@ -7,7 +7,6 @@ Flask
 gunicorn
 Flask
 gunicorn
-sqlite3-binary
 Flask==3.0.3
 gunicorn==21.2.0
 Flask-SQLAlchemy==3.1.1
