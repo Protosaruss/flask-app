@@ -2,110 +2,60 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Kayıt Ol - My Secret is Your Secret</title>
+  <title>Kayıt Ol</title>
   <style>
     body {
-      background-color: #0d0d0d;
-      color: white;
+      background-color: #0e0e0e;
+      color: #fff;
       font-family: Arial, sans-serif;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       height: 100vh;
-      margin: 0;
     }
-
-    h1 {
-      font-size: 28px;
-      margin-bottom: 15px;
-    }
-
     form {
-      background-color: #1a1a1a;
-      padding: 30px 40px;
-      border-radius: 15px;
-      box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
-      display: flex;
-      flex-direction: column;
-      align-items: stretch;
-      width: 320px;
+      background: #1a1a1a;
+      padding: 20px;
+      border-radius: 10px;
+      width: 300px;
+      box-shadow: 0 0 10px #000;
     }
-
-    label {
-      margin-bottom: 5px;
-      text-align: left;
-      font-size: 14px;
-      color: #ddd;
-    }
-
-    input, select {
-      margin-bottom: 15px;
+    input, select, button {
+      width: 100%;
       padding: 10px;
-      border-radius: 8px;
+      margin: 8px 0;
       border: none;
-      font-size: 16px;
-      outline: none;
-      background-color: #fff;
-      color: #000;
+      border-radius: 5px;
     }
-
+    input, select {
+      background: #333;
+      color: #fff;
+    }
     button {
-      background-color: #ffcc00;
+      background: #ffcc00;
       color: #000;
-      border: none;
-      padding: 12px;
-      font-size: 16px;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: 0.3s;
       font-weight: bold;
+      cursor: pointer;
     }
-
     button:hover {
-      background-color: #ffdb4d;
-    }
-
-    .link {
-      margin-top: 10px;
-      color: #ffcc00;
-      text-decoration: none;
-      font-size: 14px;
-    }
-
-    .link:hover {
-      text-decoration: underline;
+      background: #ffdb4d;
     }
   </style>
 </head>
 <body>
-  <h1>🔐 Kayıt Ol</h1>
-
+  <h2>Yeni Hesap Oluştur</h2>
   <form method="POST" action="/register">
-    <label for="username">Kullanıcı Adı</label>
-    <input type="text" id="username" name="username" placeholder="Adınızı girin" required>
-
-    <label for="email">E-posta</label>
-    <input type="email" id="email" name="email" placeholder="E-posta adresinizi girin" required>
-
-    <label for="password">Şifre</label>
-    <input type="password" id="password" name="password" placeholder="Bir şifre belirleyin" required>
-
-    <label for="gender">Cinsiyet</label>
-    <select id="gender" name="gender" required>
-      <option value="">Seçiniz</option>
-      <option value="Erkek">👨 Erkek</option>
-      <option value="Kadın">👩 Kadın</option>
-      <option value="Diğer">⚧ Diğer</option>
+    <input type="text" name="username" placeholder="Kullanıcı Adı" required>
+    <input type="email" name="email" placeholder="E-posta" required>
+    <input type="password" name="password" placeholder="Şifre" required>
+    <select name="gender" required>
+      <option value="" disabled selected>Cinsiyet Seç</option>
+      <option value="Erkek">Erkek ♂️</option>
+      <option value="Kadın">Kadın ♀️</option>
+      <option value="Diğer">Diğer ⚧️</option>
     </select>
-
-    <label for="anon_name">Anonim İsim</label>
-    <input type="text" id="anon_name" name="anon_name" placeholder="örnek: SessizRüzgar">
-
     <button type="submit">Kayıt Ol</button>
   </form>
-
-  <a href="/login" class="link">Zaten üye misin? Giriş yap</a>
 </body>
 </html>
