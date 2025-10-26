@@ -3,38 +3,74 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Kayıt Ol</title>
+  <title>Kayıt Ol - My Secret is Your Secret</title>
   <style>
-    body{font-family:Arial,sans-serif;background:#0d0d0d;color:#fff;display:flex;align-items:center;justify-content:center;height:100vh;margin:0}
-    .card{background:#1a1a1a;padding:24px 28px;border-radius:14px;box-shadow:0 0 30px rgba(0,0,0,.35);width:min(420px,90vw)}
-    h1{margin:0 0 14px}
-    input{width:100%;padding:12px;border-radius:10px;border:1px solid #333;background:#111;color:#fff;margin:8px 0}
-    button{width:100%;padding:12px;border:none;border-radius:10px;background:#ff0077;color:#fff;font-weight:700;cursor:pointer}
-    button:hover{background:#ff3399}
-    a{color:#ffd166}
-    .flash{margin:8px 0;color:#ffd166}
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #0d0d0d;
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      flex-direction: column;
+    }
+
+    form {
+      background-color: #1a1a1a;
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+      width: 300px;
+      text-align: center;
+    }
+
+    input, select {
+      display: block;
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+
+    button {
+      background-color: #ffcc00;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: 0.3s;
+    }
+
+    button:hover {
+      background-color: #ffdb4d;
+    }
+
+    h1 {
+      margin-bottom: 20px;
+    }
+
+    label {
+      text-align: left;
+      display: block;
+      font-size: 14px;
+      margin-top: 5px;
+    }
   </style>
 </head>
 <body>
-  <div class="card">
-    <h1>Kayıt Ol</h1>
+  <h1>🔐 Kayıt Ol</h1>
+  <form method="POST" action="/register">
+    <label>Kullanıcı Adı:</label>
+    <input type="text" name="username" required>
 
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        {% for category, msg in messages %}
-          <div class="flash">{{ msg }}</div>
-        {% endfor %}
-      {% endif %}
-    {% endwith %}
+    <label>E-posta:</label>
+    <input type="email" name="email" required>
 
-    <form method="POST">
-      <input type="text" name="username" placeholder="Kullanıcı adı" required>
-      <input type="email" name="email" placeholder="E-posta" required>
-      <input type="password" name="password" placeholder="Parola" required>
-      <button type="submit">Kaydol</button>
-    </form>
-    <p>Hesabın var mı? <a href="{{ url_for('login') }}">Giriş yap</a></p>
-    <p><a href="{{ url_for('home') }}">← Ana sayfa</a></p>
-  </div>
-</body>
-</html>
+    <label>Şifre:</label>
+    <input type="password" name="password" required>
+
+    <label>Cinsiyet:</label>
