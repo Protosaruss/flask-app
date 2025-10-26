@@ -1,61 +1,38 @@
-from flask import Flask, render_template, request, url_for, redirect
-import sqlite3
-import os
+from flask import Flask, render_template, request, redirect, url_for
+from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
 
 # --- Veritabanı bağlantısı ---
-DB_PATH = "users.db"
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db = SQLAlchemy(app)
 
-def init_db():
-    if not os.path.exists(DB_PATH):
-        with sqlite3.connect(DB_PATH) as conn:
-            conn.execute("""
-                CREATE TABLE users (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    username TEXT NOT NULL,
-                    email TEXT NOT NULL,
-                    password TEXT NOT NULL
-                )
-            """)
-            print("📁 Veritabanı oluşturuldu: users.db")
-
-init_db()
+# --- Kullanıcı modeli ---
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(50), nullable=False)
+    email = db.Column(db.String(100), unique=True, nullable=False)
+    password = db.Column(db.String(100), nullable=False)
 
 # --- Ana sayfa ---
-@app.route("/")
+@app.route("/", methods=["GET", "POST"])
 def home():
+    if request.method == "POST":
+        username = request.form["username"]
+        email = request.form["email"]
+        password = request.form["password"]
+
+        # Yeni kullanıcı oluştur
+        new_user = User(username=username, email=email, password=password)
+        db.session.add(new_user)
+        db.session.commit()
+
+        return redirect(url_for("home"))
+
     return render_template("index.html")
 
-# --- Kayıt formu işlemi ---
-@app.route("/register", methods=["POST"])
-def register():
-    username = request.form.get("username")
-    email = request.form.get("email")
-    password = request.form.get("password")
-
-    # Boş alan kontrolü
-    if not username or not email or not password:
-        return "⚠️ Lütfen tüm alanları doldurun.", 400
-
-    # Veritabanına kaydet
-    with sqlite3.connect(DB_PATH) as conn:
-        conn.execute("INSERT INTO users (username, email, password) VALUES (?, ?, ?)",
-                     (username, email, password))
-        conn.commit()
-
-    print(f"✅ Yeni kullanıcı eklendi: {username} ({email})")
-
-    return f"""
-    <html>
-    <head><title>Kayıt Başarılı</title></head>
-    <body style='background-color:#0d0d0d; color:#fff; text-align:center; font-family:Arial;'>
-        <h1>✅ Kayıt Başarılı!</h1>
-        <p>Hoş geldin, <strong>{username}</strong>!</p>
-        <p><a href='/' style='color:#ffcc00;'>Ana Sayfaya Dön</a></p>
-    </body>
-    </html>
-    """
-
 if __name__ == "__main__":
+    with app.app_context():
+        db.create_all()  # veritabanını oluşturur
     app.run(debug=True)
