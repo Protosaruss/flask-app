@@ -5,3 +5,6 @@ Flask-Login==0.6.3
 gunicorn==23.0.0
 Flask
 gunicorn
+Flask
+gunicorn
+sqlite3-binary
