@@ -1,21 +1,15 @@
-from flask import Flask, render_template, request
-import random
+from flask import Flask, render_template, request, redirect, url_for, session
 
 app = Flask(__name__)
+app.secret_key = "mysecretkey"
 
-# --- Anonim isim oluşturucu ---
-anon_prefixes = ["Mavi", "Gizli", "Karanlık", "Tatlı", "Uçan", "Sır", "Gece", "Rüya", "Gölge", "Sessiz"]
-anon_suffixes = ["Kuş", "Yıldız", "Kalp", "Bulut", "Kedi", "Düş", "Fısıltı", "Kurt", "Ay", "Deniz"]
+# Basit bir kullanıcı listesi (geçici veri deposu)
+users = []
 
-def generate_anon_name():
-    return random.choice(anon_prefixes) + random.choice(anon_suffixes)
-
-# --- Ana sayfa (kayıt ekranı) ---
 @app.route("/")
 def home():
     return render_template("index.html")
 
-# --- Kayıt formu gönderimi ---
 @app.route("/register", methods=["POST"])
 def register():
     username = request.form["username"]
@@ -23,20 +17,44 @@ def register():
     password = request.form["password"]
     gender = request.form["gender"]
 
-    # Rastgele anonim isim oluştur
-    anon_name = generate_anon_name()
+    # Kullanıcıyı listeye ekle
+    user = {
+        "username": username,
+        "email": email,
+        "password": password,
+        "gender": gender
+    }
+    users.append(user)
 
-    # Cinsiyet simgesi seçimi
-    icons = {"male": "👨", "female": "👩", "other": "🧑"}
-    gender_icon = icons.get(gender, "🧑")
+    # Session'a kaydet
+    session["user"] = username
+    session["gender"] = gender
 
-    # Dashboard’a yönlendir
-    return render_template("dashboard.html", anon_name=anon_name, gender_icon=gender_icon)
+    return redirect(url_for("dashboard"))
 
-# --- Dashboard (giriş sonrası ekran) ---
 @app.route("/dashboard")
 def dashboard():
-    return render_template("dashboard.html", anon_name="Anonim", gender_icon="🧑")
+    if "user" not in session:
+        return redirect(url_for("home"))
+
+    user = session["user"]
+    gender = session["gender"]
+
+    # Cinsiyet simgesi seçimi
+    if gender == "male":
+        symbol = "👨"
+    elif gender == "female":
+        symbol = "👩"
+    else:
+        symbol = "⚧️"
+
+    return render_template("dashboard.html", user=user, gender_symbol=symbol)
+
+@app.route("/logout")
+def logout():
+    session.pop("user", None)
+    session.pop("gender", None)
+    return redirect(url_for("home"))
 
 if __name__ == "__main__":
     app.run(debug=True)
