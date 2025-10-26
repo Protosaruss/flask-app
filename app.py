@@ -1,10 +1,10 @@
-from flask import Flask
+from flask import Flask, render_template, url_for
 
 app = Flask(__name__)
 
 @app.route("/")
 def home():
-    return "Merhaba! Render üzerinde çalışan ilk Flask uygulamam 🎉"
+    return render_template("index.html")
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    app.run(debug=True)
