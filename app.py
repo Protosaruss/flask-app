@@ -1,21 +1,51 @@
-from flask import Flask, render_template, request, url_for
+from flask import Flask, render_template, request, url_for, redirect
+import sqlite3
+import os
 
 app = Flask(__name__)
 
+# --- Veritabanı bağlantısı ---
+DB_PATH = "users.db"
+
+def init_db():
+    if not os.path.exists(DB_PATH):
+        with sqlite3.connect(DB_PATH) as conn:
+            conn.execute("""
+                CREATE TABLE users (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    username TEXT NOT NULL,
+                    email TEXT NOT NULL,
+                    password TEXT NOT NULL
+                )
+            """)
+            print("📁 Veritabanı oluşturuldu: users.db")
+
+init_db()
+
+# --- Ana sayfa ---
 @app.route("/")
 def home():
     return render_template("index.html")
 
+# --- Kayıt formu işlemi ---
 @app.route("/register", methods=["POST"])
 def register():
     username = request.form.get("username")
     email = request.form.get("email")
     password = request.form.get("password")
 
-    # Şimdilik gelen bilgileri terminale yazdıralım (test amaçlı)
-    print(f"Yeni kullanıcı kaydı: {username} - {email} - {password}")
+    # Boş alan kontrolü
+    if not username or not email or not password:
+        return "⚠️ Lütfen tüm alanları doldurun.", 400
 
-    # Geçici olarak teşekkür sayfası gösterelim
+    # Veritabanına kaydet
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute("INSERT INTO users (username, email, password) VALUES (?, ?, ?)",
+                     (username, email, password))
+        conn.commit()
+
+    print(f"✅ Yeni kullanıcı eklendi: {username} ({email})")
+
     return f"""
     <html>
     <head><title>Kayıt Başarılı</title></head>
