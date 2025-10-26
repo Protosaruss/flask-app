@@ -10,11 +10,7 @@
       color: #fff;
       font-family: Arial, sans-serif;
       text-align: center;
-      padding: 100px 0;
-    }
-
-    h1 {
-      font-size: 30px;
+      margin-top: 100px;
     }
 
     a {
@@ -24,13 +20,14 @@
     }
 
     a:hover {
-      text-decoration: underline;
+      color: #ffdb4d;
     }
   </style>
 </head>
 <body>
-  <h1>{{ gender_icon }} Merhaba, {{ anon_name }} 👋</h1>
+  <h1>Merhaba, {{ user }} {{ gender_symbol }}</h1>
   <p>Burada “sır ekleme / sırları görme” gibi sayfaları bağlayacağız.</p>
-  <p><a href="/">Çıkış Yap</a> • <a href="/">Ana sayfa</a></p>
+  <a href="{{ url_for('logout') }}">Çıkış Yap</a> •
+  <a href="{{ url_for('home') }}">Ana sayfa</a>
 </body>
 </html>
