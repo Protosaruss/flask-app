@@ -1,60 +1,86 @@
 from flask import Flask, render_template, request, redirect, url_for, session
+from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
 app.secret_key = "mysecretkey"
 
-# Basit bir kullanıcı listesi (geçici veri deposu)
-users = []
+# --- Veritabanı bağlantısı ---
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///users.db"
+db = SQLAlchemy(app)
 
+# --- Kullanıcı Modeli ---
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), nullable=False)
+    email = db.Column(db.String(120), nullable=False, unique=True)
+    password = db.Column(db.String(80), nullable=False)
+    gender = db.Column(db.String(20), nullable=False)
+    anon_name = db.Column(db.String(80), nullable=False)
+
+# --- Ana Sayfa ---
 @app.route("/")
 def home():
     return render_template("index.html")
 
-@app.route("/register", methods=["POST"])
+# --- Kayıt Sayfası ---
+@app.route("/register", methods=["GET", "POST"])
 def register():
-    username = request.form["username"]
-    email = request.form["email"]
-    password = request.form["password"]
-    gender = request.form["gender"]
+    if request.method == "POST":
+        username = request.form["username"]
+        email = request.form["email"]
+        password = request.form["password"]
+        gender = request.form["gender"]
+        anon_name = request.form["anon_name"]
 
-    # Kullanıcıyı listeye ekle
-    user = {
-        "username": username,
-        "email": email,
-        "password": password,
-        "gender": gender
-    }
-    users.append(user)
+        # Yeni kullanıcı oluştur
+        new_user = User(username=username, email=email, password=password,
+                        gender=gender, anon_name=anon_name)
 
-    # Session'a kaydet
-    session["user"] = username
-    session["gender"] = gender
+        db.session.add(new_user)
+        db.session.commit()
 
-    return redirect(url_for("dashboard"))
+        session["user"] = username
+        session["anon_name"] = anon_name
+        session["gender"] = gender
+        return redirect(url_for("dashboard"))
+    return render_template("register.html")
 
+# --- Giriş Sayfası ---
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        email = request.form["email"]
+        password = request.form["password"]
+
+        user = User.query.filter_by(email=email, password=password).first()
+        if user:
+            session["user"] = user.username
+            session["anon_name"] = user.anon_name
+            session["gender"] = user.gender
+            return redirect(url_for("dashboard"))
+        else:
+            return "Hatalı giriş!"
+    return render_template("login.html")
+
+# --- Dashboard (Kullanıcı Paneli) ---
 @app.route("/dashboard")
 def dashboard():
-    if "user" not in session:
-        return redirect(url_for("home"))
+    if "user" in session:
+        gender = session.get("gender", "")
+        symbol = "👨" if gender == "male" else "👩" if gender == "female" else "⚧"
+        return render_template("dashboard.html",
+                               anon_name=session["anon_name"],
+                               gender_symbol=symbol)
+    return redirect(url_for("login"))
 
-    user = session["user"]
-    gender = session["gender"]
-
-    # Cinsiyet simgesi seçimi
-    if gender == "male":
-        symbol = "👨"
-    elif gender == "female":
-        symbol = "👩"
-    else:
-        symbol = "⚧️"
-
-    return render_template("dashboard.html", user=user, gender_symbol=symbol)
-
+# --- Çıkış ---
 @app.route("/logout")
 def logout():
-    session.pop("user", None)
-    session.pop("gender", None)
+    session.clear()
     return redirect(url_for("home"))
 
+# --- Ana Uygulama ---
 if __name__ == "__main__":
+    with app.app_context():
+        db.create_all()
     app.run(debug=True)
