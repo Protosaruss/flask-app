@@ -23,17 +23,23 @@
       text-align: center;
     }
 
+    .img-button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+      transition: transform 0.2s ease;
+    }
+
+    .img-button:hover {
+      transform: scale(1.05);
+    }
+
     img {
       max-width: 200px;
       border-radius: 15px;
       box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
       margin-bottom: 30px;
-      transition: transform 0.2s ease;
-      cursor: pointer;
-    }
-
-    img:hover {
-      transform: scale(1.05);
     }
 
     .buttons {
@@ -71,22 +77,22 @@
   </style>
 </head>
 <body>
-
-  <!-- Görsel: Google yönlendirmesi eklendi -->
-  <a href="https://www.google.com" target="_blank">
-    <img src="{{ url_for('static', filename='muzip.png') }}" alt="Site Logosu">
-  </a>
+  <!-- Görseli butona çevirdik -->
+  <form action="https://www.google.com" method="get" target="_blank">
+    <button class="img-button" type="submit">
+      <img src="{{ url_for('static', filename='muzip.png') }}" alt="Site Logosu">
+    </button>
+  </form>
 
   <h1>🔐 My Secret is Your Secret</h1>
 
   <div class="buttons">
-    <a href="{{ url_for('login') }}"><button>Giriş Yap</button></a>
-    <a href="{{ url_for('register') }}"><button>Kayıt Ol</button></a>
+    <a href="{{ url_for('login') }}"><button type="button">Giriş Yap</button></a>
+    <a href="{{ url_for('register') }}"><button type="button">Kayıt Ol</button></a>
   </div>
 
   <footer>
     <p>Anonim sır paylaşım platformu © 2025</p>
   </footer>
-
 </body>
 </html>
