@@ -1,116 +1,113 @@
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Giriş Yap - My Secret is Your Secret</title>
-  <style>
-    body {
-      background-color: #0d0d0d;
-      color: white;
-      font-family: Arial, sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-      margin: 0;
-    }
+# ------------------------------------------------------
+# app.py – MySecretIsYourSecret Flask Uygulaması (Render için)
+# ------------------------------------------------------
 
-    h1 {
-      font-size: 28px;
-      margin-bottom: 15px;
-    }
+from flask import Flask, render_template, request, redirect, url_for, flash, session
+from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.exc import IntegrityError
+import os
 
-    form {
-      background-color: #1a1a1a;
-      padding: 30px 40px;
-      border-radius: 15px;
-      box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
-      display: flex;
-      flex-direction: column;
-      align-items: stretch;
-      width: 320px;
-    }
+# --- Flask Uygulaması Başlatma ---
+app = Flask(__name__)
+app.secret_key = "supersecretkey"
 
-    label {
-      margin-bottom: 5px;
-      text-align: left;
-      font-size: 14px;
-      color: #ddd;
-    }
+# --- Render PostgreSQL bağlantısı ---
+# Render’daki “External Database URL” değerini al, sslmode=require ekle
+app.config['SQLALCHEMY_DATABASE_URI'] = (
+    "postgresql://flask_db_gvdu_user:Aob8bxDlwlCqmQYLs3kexSuHMOOvY8Dd"
+    "@dpg-d3vkonjipnbc739o4po0-a/flask_db_gvdu?sslmode=require"
+)
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-    input {
-      margin-bottom: 15px;
-      padding: 10px;
-      border-radius: 8px;
-      border: none;
-      font-size: 16px;
-      outline: none;
-      background-color: #fff;
-      color: #000;
-    }
+# --- Veritabanı Nesnesi ---
+db = SQLAlchemy(app)
 
-    button {
-      background-color: #ffcc00;
-      color: #000;
-      border: none;
-      padding: 12px;
-      font-size: 16px;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: 0.3s;
-      font-weight: bold;
-    }
+# --- Kullanıcı Modeli ---
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password = db.Column(db.String(120), nullable=False)
+    gender = db.Column(db.String(20), nullable=False)
 
-    button:hover {
-      background-color: #ffdb4d;
-    }
+# --- Veritabanı oluşturma (Render’da otomatik olsun) ---
+with app.app_context():
+    db.create_all()
 
-    .link {
-      margin-top: 10px;
-      color: #ffcc00;
-      text-decoration: none;
-      font-size: 14px;
-    }
+# --- Ana Sayfa ---
+@app.route('/')
+def home():
+    return render_template('index.html')
 
-    .link:hover {
-      text-decoration: underline;
-    }
+# --- Kayıt Sayfası ---
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        email = request.form.get('email')
+        password = request.form.get('password')
+        gender = request.form.get('gender')
 
-    .flash {
-      margin-bottom: 15px;
-      background-color: #333;
-      padding: 10px;
-      border-radius: 5px;
-      color: #ffcc00;
-      text-align: center;
-      font-size: 14px;
-    }
-  </style>
-</head>
-<body>
-  <h1>🔐 Giriş Yap</h1>
+        if not username or not email or not password or not gender:
+            flash("Lütfen tüm alanları doldurun.", "error")
+            return redirect(url_for('register'))
 
-  <!-- Flash mesajları -->
-  {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-      {% for category, message in messages %}
-        <div class="flash">{{ message }}</div>
-      {% endfor %}
-    {% endif %}
-  {% endwith %}
+        try:
+            new_user = User(username=username, email=email, password=password, gender=gender)
+            db.session.add(new_user)
+            db.session.commit()
+            flash("Kayıt başarılı! Şimdi giriş yapabilirsiniz.", "success")
+            return redirect(url_for('login'))
+        except IntegrityError:
+            db.session.rollback()
+            flash("Bu kullanıcı adı veya e-posta zaten kayıtlı.", "error")
+            return redirect(url_for('register'))
 
-  <form method="POST" action="/login">
-    <label for="username">Kullanıcı Adı</label>
-    <input type="text" id="username" name="username" placeholder="Kullanıcı adınızı girin" required>
+    return render_template('register.html')
 
-    <label for="password">Şifre</label>
-    <input type="password" id="password" name="password" placeholder="Şifrenizi girin" required>
+# --- Giriş Sayfası (Kullanıcı adıyla) ---
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
 
-    <button type="submit">Giriş Yap</button>
-  </form>
+        if not username or not password:
+            flash("Lütfen tüm alanları doldurun.", "error")
+            return redirect(url_for('login'))
 
-  <a href="/register" class="link">Henüz üye değil misin? Kayıt ol</a>
-</body>
-</html>
+        user = User.query.filter_by(username=username, password=password).first()
+        if user:
+            session['user'] = user.username
+            flash("Başarıyla giriş yaptınız!", "success")
+            return redirect(url_for('dashboard'))
+        else:
+            flash("Kullanıcı adı veya şifre hatalı.", "error")
+            return redirect(url_for('login'))
+
+    return render_template('login.html')
+
+# --- Kullanıcı Paneli (Dashboard) ---
+@app.route('/dashboard')
+def dashboard():
+    if 'user' not in session:
+        flash("Lütfen önce giriş yapın.", "error")
+        return redirect(url_for('login'))
+
+    username = session['user']
+    user = User.query.filter_by(username=username).first()
+    gender_icon = "♂️" if user.gender == "Erkek" else "♀️" if user.gender == "Kadın" else "⚧️"
+
+    return render_template('dashboard.html', username=username, gender_icon=gender_icon)
+
+# --- Çıkış ---
+@app.route('/logout')
+def logout():
+    session.pop('user', None)
+    flash("Çıkış yapıldı.", "info")
+    return redirect(url_for('home'))
+
+# --- Uygulama Çalıştırma ---
+if __name__ == '__main__':
+    # Render ortamı için host=0.0.0.0 ayarı gerekir
+    app.run(host='0.0.0.0', port=5000)
