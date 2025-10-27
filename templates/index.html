@@ -28,6 +28,12 @@
       border-radius: 15px;
       box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
       margin-bottom: 30px;
+      transition: transform 0.2s ease;
+      cursor: pointer;
+    }
+
+    img:hover {
+      transform: scale(1.05);
     }
 
     .buttons {
@@ -65,8 +71,10 @@
   </style>
 </head>
 <body>
-  <!-- Görseli buraya ekledik -->
-  <img src="{{ url_for('static', filename='muzip.png') }}" alt="Site Logosu">
+  <!-- Görsel tıklanınca giriş sayfasına yönlendirir -->
+  <a href="{{ url_for('login') }}">
+    <img src="{{ url_for('static', filename='muzip.png') }}" alt="Site Logosu">
+  </a>
 
   <h1>🔐 My Secret is Your Secret</h1>
 
