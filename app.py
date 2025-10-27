@@ -8,7 +8,7 @@ app.secret_key = "supersecretkey"
 app.template_folder = os.path.join(os.path.dirname(__file__), 'templates')
 app.static_folder = os.path.join(os.path.dirname(__file__), 'static')
 
-# --- Sahte veri tabanı ---
+# --- Sahte veri tabanı (örnek olarak RAM'de tutuluyor) ---
 users = {}
 
 # --- Ana sayfa ---
@@ -25,6 +25,11 @@ def register():
         password = request.form['password']
         gender = request.form['gender']
 
+        # Aynı e-posta veya kullanıcı adı kayıtlı mı?
+        for user, data in users.items():
+            if data["email"] == email:
+                flash("Bu e-posta adresiyle zaten bir hesap var.", "error")
+                return redirect(url_for('register'))
         if username in users:
             flash("Bu kullanıcı adı zaten alınmış.", "error")
             return redirect(url_for('register'))
@@ -35,19 +40,21 @@ def register():
 
     return render_template('register.html')
 
-# --- Giriş sayfası ---
+# --- Giriş sayfası (e-posta ile giriş) ---
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        username = request.form['username']
+        email = request.form['email']
         password = request.form['password']
 
-        if username in users and users[username]["password"] == password:
-            session['user'] = username
-            return redirect(url_for('dashboard'))
-        else:
-            flash("Kullanıcı adı veya şifre hatalı.", "error")
-            return redirect(url_for('login'))
+        # E-posta üzerinden kullanıcıyı bul
+        for user, data in users.items():
+            if data["email"] == email and data["password"] == password:
+                session['user'] = user
+                return redirect(url_for('dashboard'))
+
+        flash("E-posta veya şifre hatalı.", "error")
+        return redirect(url_for('login'))
 
     return render_template('login.html')
 
