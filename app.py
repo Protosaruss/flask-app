@@ -1,43 +1,45 @@
+# ------------------------------------------------------
+# app.py – MySecretIsYourSecret Flask Uygulaması (Render için)
+# ------------------------------------------------------
+
 from flask import Flask, render_template, request, redirect, url_for, flash, session
 from flask_sqlalchemy import SQLAlchemy
-from flask_bcrypt import Bcrypt
+from sqlalchemy.exc import IntegrityError
 import os
 
-# --- Flask uygulaması oluşturma ---
+# --- Flask Uygulaması Başlatma ---
 app = Flask(__name__)
 app.secret_key = "supersecretkey"
 
 # --- Render PostgreSQL bağlantısı ---
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://flask_db_gvdu_user:Aob8bxDlwlCqmQYLs3kexSuHMOOvY8Dd@dpg-d3vkonjipnbc739o4po0-a/flask_db_gvdu'
+# Render'daki "External Database URL" değerini alıp buraya yapıştır
+app.config['SQLALCHEMY_DATABASE_URI'] = (
+    "postgresql://flask_db_gvdu_user:Aob8bxDlwlCqmQYLs3kexSuHMOOvY8Dd"
+    "@dpg-d3vkonjipnbc739o4po0-a/flask_db_gvdu"
+)
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# --- Veritabanı ve şifreleme ayarları ---
+# --- Veritabanı Nesnesi ---
 db = SQLAlchemy(app)
-bcrypt = Bcrypt(app)
 
-
-# --- Kullanıcı modeli ---
+# --- Kullanıcı Modeli ---
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(50), unique=True, nullable=False)
+    username = db.Column(db.String(80), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
-    password = db.Column(db.String(200), nullable=False)
+    password = db.Column(db.String(120), nullable=False)
     gender = db.Column(db.String(20), nullable=False)
 
-    def __init__(self, username, email, password, gender):
-        self.username = username
-        self.email = email
-        self.password = bcrypt.generate_password_hash(password).decode('utf-8')
-        self.gender = gender
+# --- Uygulama Başlarken Veritabanını Oluştur ---
+with app.app_context():
+    db.create_all()
 
-
-# --- Ana sayfa ---
+# --- Ana Sayfa ---
 @app.route('/')
 def home():
     return render_template('index.html')
 
-
-# --- Kayıt sayfası ---
+# --- Kayıt Sayfası ---
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
@@ -46,32 +48,29 @@ def register():
         password = request.form['password']
         gender = request.form['gender']
 
-        existing_user = User.query.filter((User.username == username) | (User.email == email)).first()
-        if existing_user:
-            flash("Bu kullanıcı adı veya e-posta zaten alınmış.", "error")
+        try:
+            new_user = User(username=username, email=email, password=password, gender=gender)
+            db.session.add(new_user)
+            db.session.commit()
+            flash("Kayıt başarılı! Şimdi giriş yapabilirsiniz.", "success")
+            return redirect(url_for('login'))
+        except IntegrityError:
+            db.session.rollback()
+            flash("Bu kullanıcı adı veya e-posta zaten kayıtlı.", "error")
             return redirect(url_for('register'))
-
-        new_user = User(username=username, email=email, password=password, gender=gender)
-        db.session.add(new_user)
-        db.session.commit()
-
-        flash("Kayıt başarılı! Şimdi giriş yapabilirsiniz.", "success")
-        return redirect(url_for('login'))
 
     return render_template('register.html')
 
-
-# --- Giriş sayfası ---
+# --- Giriş Sayfası ---
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         email = request.form['email']
         password = request.form['password']
 
-        user = User.query.filter_by(email=email).first()
-        if user and bcrypt.check_password_hash(user.password, password):
+        user = User.query.filter_by(email=email, password=password).first()
+        if user:
             session['user'] = user.username
-            flash("Giriş başarılı!", "success")
             return redirect(url_for('dashboard'))
         else:
             flash("E-posta veya şifre hatalı.", "error")
@@ -79,8 +78,7 @@ def login():
 
     return render_template('login.html')
 
-
-# --- Kullanıcı paneli (Dashboard) ---
+# --- Kullanıcı Paneli (Dashboard) ---
 @app.route('/dashboard')
 def dashboard():
     if 'user' not in session:
@@ -92,7 +90,6 @@ def dashboard():
 
     return render_template('dashboard.html', username=username, gender_icon=gender_icon)
 
-
 # --- Çıkış ---
 @app.route('/logout')
 def logout():
@@ -100,14 +97,7 @@ def logout():
     flash("Çıkış yapıldı.", "info")
     return redirect(url_for('home'))
 
-
-# --- Veritabanı oluşturma komutu ---
-@app.cli.command("create-db")
-def create_db():
-    db.create_all()
-    print("✅ Veritabanı oluşturuldu!")
-
-
-# --- Uygulama başlatma ---
+# --- Uygulama Çalıştırma ---
 if __name__ == '__main__':
+    # Render için host=0.0.0.0 ayarı gerekir
     app.run(host='0.0.0.0', port=5000)
