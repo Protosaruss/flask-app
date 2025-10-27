@@ -18,9 +18,16 @@
     }
 
     h1 {
-      margin-bottom: 40px;
+      margin-bottom: 25px;
       font-size: 28px;
       text-align: center;
+    }
+
+    img {
+      max-width: 200px;
+      border-radius: 15px;
+      box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+      margin-bottom: 30px;
     }
 
     .buttons {
@@ -58,6 +65,9 @@
   </style>
 </head>
 <body>
+  <!-- Görseli buraya ekledik -->
+  <img src="{{ url_for('static', filename='muzip.png') }}" alt="Site Logosu">
+
   <h1>🔐 My Secret is Your Secret</h1>
 
   <div class="buttons">
