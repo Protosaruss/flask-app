@@ -1,73 +1,81 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session
+from flask_sqlalchemy import SQLAlchemy
+from flask_bcrypt import Bcrypt
 import os
 
 app = Flask(__name__)
-app.secret_key = "supersecretkey"
+app.secret_key = os.environ.get("SECRET_KEY", "supersecretkey")
 
-# --- Render ve Flask için dizin ayarları ---
-app.template_folder = os.path.join(os.path.dirname(__file__), 'templates')
-app.static_folder = os.path.join(os.path.dirname(__file__), 'static')
+# --- Render PostgreSQL bağlantısı ---
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL').replace("postgres://", "postgresql://")
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# --- Sahte veri tabanı (örnek olarak RAM'de tutuluyor) ---
-users = {}
+db = SQLAlchemy(app)
+bcrypt = Bcrypt(app)
 
-# --- Ana sayfa ---
+# --- Kullanıcı Modeli ---
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password = db.Column(db.String(200), nullable=False)
+    gender = db.Column(db.String(20))
+
+# --- Ana Sayfa ---
 @app.route('/')
 def home():
     return render_template('index.html')
 
-# --- Kayıt sayfası ---
+# --- Kayıt ---
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
         username = request.form['username']
         email = request.form['email']
-        password = request.form['password']
+        password = bcrypt.generate_password_hash(request.form['password']).decode('utf-8')
         gender = request.form['gender']
 
-        # Aynı e-posta veya kullanıcı adı kayıtlı mı?
-        for user, data in users.items():
-            if data["email"] == email:
-                flash("Bu e-posta adresiyle zaten bir hesap var.", "error")
-                return redirect(url_for('register'))
-        if username in users:
+        if User.query.filter_by(username=username).first():
             flash("Bu kullanıcı adı zaten alınmış.", "error")
             return redirect(url_for('register'))
 
-        users[username] = {"email": email, "password": password, "gender": gender}
+        if User.query.filter_by(email=email).first():
+            flash("Bu e-posta zaten kayıtlı.", "error")
+            return redirect(url_for('register'))
+
+        new_user = User(username=username, email=email, password=password, gender=gender)
+        db.session.add(new_user)
+        db.session.commit()
+
         flash("Kayıt başarılı! Şimdi giriş yapabilirsiniz.", "success")
         return redirect(url_for('login'))
-
     return render_template('register.html')
 
-# --- Giriş sayfası (e-posta ile giriş) ---
+# --- Giriş ---
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         email = request.form['email']
         password = request.form['password']
 
-        # E-posta üzerinden kullanıcıyı bul
-        for user, data in users.items():
-            if data["email"] == email and data["password"] == password:
-                session['user'] = user
-                return redirect(url_for('dashboard'))
-
-        flash("E-posta veya şifre hatalı.", "error")
-        return redirect(url_for('login'))
-
+        user = User.query.filter_by(email=email).first()
+        if user and bcrypt.check_password_hash(user.password, password):
+            session['user'] = user.username
+            return redirect(url_for('dashboard'))
+        else:
+            flash("E-posta veya şifre hatalı.", "error")
+            return redirect(url_for('login'))
     return render_template('login.html')
 
-# --- Kullanıcı paneli (Dashboard) ---
+# --- Dashboard ---
 @app.route('/dashboard')
 def dashboard():
     if 'user' not in session:
         return redirect(url_for('login'))
 
     username = session['user']
-    user_gender = users[username]["gender"]
-    gender_icon = "♂️" if user_gender == "Erkek" else "♀️" if user_gender == "Kadın" else "⚧️"
-
+    user = User.query.filter_by(username=username).first()
+    gender_icon = "♂️" if user.gender == "Erkek" else "♀️" if user.gender == "Kadın" else "⚧️"
     return render_template('dashboard.html', username=username, gender_icon=gender_icon)
 
 # --- Çıkış ---
@@ -77,6 +85,8 @@ def logout():
     flash("Çıkış yapıldı.", "info")
     return redirect(url_for('home'))
 
-# --- Uygulama çalıştırma ---
+# --- Uygulama başlatma ---
 if __name__ == '__main__':
+    with app.app_context():
+        db.create_all()
     app.run(host='0.0.0.0', port=5000)
