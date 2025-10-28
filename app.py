@@ -1,6 +1,6 @@
-# ============================================================
-# app.py — MySecretIsYourSecret Flask Uygulaması (Render için)
-# ============================================================
+# -------------------------------------------------------------
+# MySecretIsYourSecret Flask Uygulaması (Render için)
+# -------------------------------------------------------------
 
 from flask import Flask, render_template, request, redirect, url_for, flash, session
 from flask_sqlalchemy import SQLAlchemy
@@ -12,9 +12,10 @@ app = Flask(__name__)
 app.secret_key = "supersecretkey"
 
 # --- Render PostgreSQL Bağlantısı ---
-# Render'daki "External Database URL" değerini buraya ekle
+# Render veritabanı bilgilerini buraya kendi Render ekranından kopyalayacaksın
 app.config['SQLALCHEMY_DATABASE_URI'] = (
-    "postgresql://flask_db_gvdu_user:Aob8bxDlwlCqmQYLs3kexSuHMOOvY8Dd@dpg-d3vkonjipnbc739o4po0-a/flask_db_gvdu"
+    "postgresql://flask_db_gvdu_user:Aob8bxDlwlCqmQYLs3kexSuHMOOvY8Dd@"
+    "dpg-d3vkonjipnbc739o4po0-a/flask_db_gvdu"
 )
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -26,16 +27,12 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
-    password = db.Column(db.String(200), nullable=False)
+    password = db.Column(db.String(120), nullable=False)
     gender = db.Column(db.String(20), nullable=False)
 
-# --- Veritabanı Oluşturma (Render’da otomatik olsun) ---
+# --- Veritabanı oluşturma (Render’da otomatik oluşturulmaz) ---
 with app.app_context():
     db.create_all()
-
-# ============================================================
-# ROTALAR
-# ============================================================
 
 # --- Ana Sayfa ---
 @app.route('/')
@@ -46,10 +43,10 @@ def home():
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
-        username = request.form.get('username')
-        email = request.form.get('email')
-        password = request.form.get('password')
-        gender = request.form.get('gender')
+        username = request.form.get('username', '').strip()
+        email = request.form.get('email', '').strip()
+        password = request.form.get('password', '').strip()
+        gender = request.form.get('gender', '').strip()
 
         if not username or not email or not password or not gender:
             flash("Lütfen tüm alanları doldurun.", "error")
@@ -72,14 +69,15 @@ def register():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        username = request.form.get('username')
-        password = request.form.get('password')
+        username = request.form.get('username', '').strip()
+        password = request.form.get('password', '').strip()
 
         if not username or not password:
-            flash("Lütfen tüm alanları doldurun.", "error")
+            flash("Lütfen kullanıcı adı ve şifre girin.", "error")
             return redirect(url_for('login'))
 
         user = User.query.filter_by(username=username, password=password).first()
+
         if user:
             session['user'] = user.username
             flash("Başarıyla giriş yaptınız!", "success")
@@ -99,8 +97,8 @@ def dashboard():
 
     username = session['user']
     user = User.query.filter_by(username=username).first()
-    gender_icon = "♂️" if user.gender == "Erkek" else "♀️" if user.gender == "Kadın" else "⚧️"
 
+    gender_icon = "♂️" if user.gender == "Erkek" else "♀️" if user.gender == "Kadın" else "⚧️"
     return render_template('dashboard.html', username=username, gender_icon=gender_icon)
 
 # --- Çıkış ---
@@ -110,9 +108,6 @@ def logout():
     flash("Çıkış yapıldı.", "info")
     return redirect(url_for('home'))
 
-# ============================================================
-# Uygulama Çalıştırma (Render uyumlu)
-# ============================================================
+# --- Uygulama Çalıştırma (Render için özel ayar) ---
 if __name__ == '__main__':
-    # Render ortamında 0.0.0.0 host gereklidir
     app.run(host='0.0.0.0', port=5000)
