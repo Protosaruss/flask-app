@@ -1,22 +1,50 @@
-# --- Giriş Sayfası (Kullanıcı adıyla) ---
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    if request.method == 'POST':  # Sadece form gönderildiyse çalışsın
-        username = request.form.get('username')
-        password = request.form.get('password')
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Giriş Yap - My Secret is Your Secret</title>
+  <style>
+    body{background:#0d0d0d;color:#fff;font-family:Arial,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0}
+    .card{background:#161616;border-radius:16px;padding:28px 24px;box-shadow:0 0 24px rgba(255,255,255,.06);width:min(92vw,360px)}
+    h1{margin:0 0 18px;font-size:22px}
+    label{font-size:13px;color:#ddd;margin:10px 0 6px;display:block}
+    input{width:100%;padding:10px 12px;border-radius:8px;border:none;font-size:15px;background:#fff;color:#000}
+    button{width:100%;margin-top:16px;background:#ffcc00;color:#000;border:none;padding:12px 14px;font-size:16px;border-radius:10px;cursor:pointer;font-weight:700}
+    button:hover{background:#ffdb4d}
+    .flash{margin-bottom:10px;background:#2a2a2a;padding:10px;border-radius:8px;color:#ffcc00;font-size:14px}
+    .links{margin-top:10px;font-size:14px}
+    .links a{color:#ffcc00;text-decoration:none}
+    .links a:hover{text-decoration:underline}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>🔐 Giriş Yap</h1>
 
-        if not username or not password:
-            flash("Lütfen tüm alanları doldurun.", "error")
-            return redirect(url_for('login'))
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="flash">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
 
-        user = User.query.filter_by(username=username, password=password).first()
-        if user:
-            session['user'] = user.username
-            flash("Başarıyla giriş yaptınız!", "success")
-            return redirect(url_for('dashboard'))
-        else:
-            flash("Kullanıcı adı veya şifre hatalı.", "error")
-            return redirect(url_for('login'))
+    <form method="POST" action="{{ url_for('login') }}">
+      <label for="username">Kullanıcı adı</label>
+      <input id="username" name="username" type="text" placeholder="kullaniciadiniz" required />
 
-    # Eğer GET isteğiyle geldiyse sadece login sayfasını render et
-    return render_template('login.html')
+      <label for="password">Şifre</label>
+      <input id="password" name="password" type="password" placeholder="••••••••" required />
+
+      <button type="submit">Giriş Yap</button>
+    </form>
+
+    <div class="links">
+      <a href="{{ url_for('register') }}">Hesabın yok mu? Kayıt ol</a>
+      &nbsp;•&nbsp;
+      <a href="{{ url_for('home') }}">Ana sayfa</a>
+    </div>
+  </div>
+</body>
+</html>
