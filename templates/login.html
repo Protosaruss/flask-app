@@ -5,17 +5,65 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Giriş Yap - My Secret is Your Secret</title>
   <style>
-    body{background:#0d0d0d;color:#fff;font-family:Arial,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0}
-    .card{background:#161616;border-radius:16px;padding:28px 24px;box-shadow:0 0 24px rgba(255,255,255,.06);width:min(92vw,360px)}
-    h1{margin:0 0 18px;font-size:22px}
-    label{font-size:13px;color:#ddd;margin:10px 0 6px;display:block}
-    input{width:100%;padding:10px 12px;border-radius:8px;border:none;font-size:15px;background:#fff;color:#000}
-    button{width:100%;margin-top:16px;background:#ffcc00;color:#000;border:none;padding:12px 14px;font-size:16px;border-radius:10px;cursor:pointer;font-weight:700}
-    button:hover{background:#ffdb4d}
-    .flash{margin-bottom:10px;background:#2a2a2a;padding:10px;border-radius:8px;color:#ffcc00;font-size:14px}
-    .links{margin-top:10px;font-size:14px}
-    .links a{color:#ffcc00;text-decoration:none}
-    .links a:hover{text-decoration:underline}
+    body {
+      background:#0d0d0d;
+      color:#fff;
+      font-family:Arial,sans-serif;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      min-height:100vh;
+      margin:0;
+    }
+    .card {
+      background:#161616;
+      border-radius:16px;
+      padding:28px 24px;
+      box-shadow:0 0 24px rgba(255,255,255,.06);
+      width:min(92vw,360px);
+      text-align:center;
+    }
+    h1 {margin:0 0 18px;font-size:22px}
+    label {font-size:13px;color:#ddd;margin:10px 0 6px;display:block;text-align:left}
+    input {
+      width:100%;
+      padding:10px 12px;
+      border-radius:8px;
+      border:none;
+      font-size:15px;
+      background:#eef2ff;
+      color:#000;
+    }
+    button {
+      width:100%;
+      margin-top:16px;
+      background:#ffcc00;
+      color:#000;
+      border:none;
+      padding:12px 14px;
+      font-size:16px;
+      border-radius:10px;
+      cursor:pointer;
+      font-weight:700;
+    }
+    button:hover {background:#ffdb4d}
+    .flash {
+      margin-bottom:10px;
+      background:#2a2a2a;
+      padding:10px;
+      border-radius:8px;
+      color:#ffcc00;
+      font-size:14px;
+    }
+    .links {
+      margin-top:10px;
+      font-size:14px;
+    }
+    .links a {
+      color:#ffcc00;
+      text-decoration:none;
+    }
+    .links a:hover {text-decoration:underline}
   </style>
 </head>
 <body>
@@ -30,8 +78,8 @@
       {% endif %}
     {% endwith %}
 
+    <!-- ✅ Tek form, doğru yönlendirme -->
     <form method="POST" action="{{ url_for('login') }}">
-
       <label for="username">Kullanıcı adı</label>
       <input id="username" name="username" type="text" placeholder="kullaniciadiniz" required />
 
