@@ -1,21 +1,25 @@
 # ------------------------------------------------------
 # app.py – MySecretIsYourSecret Flask Uygulaması (Render için)
 # ------------------------------------------------------
+
 from flask import Flask, render_template, request, redirect, url_for, flash, session
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.exc import IntegrityError
 import os
 
+# --- Flask Uygulaması Başlatma ---
 app = Flask(__name__)
 app.secret_key = "supersecretkey"
 
 # --- Render PostgreSQL bağlantısı ---
+# Render’daki “External Database URL” değerini buraya yapıştır, sslmode=require ekle
 app.config['SQLALCHEMY_DATABASE_URI'] = (
     "postgresql://flask_db_gvdu_user:Aob8bxDlwlCqmQYLs3kexSuHMOOvY8Dd"
     "@dpg-d3vkonjipnbc739o4po0-a/flask_db_gvdu?sslmode=require"
 )
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
+# --- Veritabanı Nesnesi ---
 db = SQLAlchemy(app)
 
 # --- Kullanıcı Modeli ---
@@ -33,6 +37,7 @@ class Secret(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     user = db.relationship('User', backref=db.backref('secrets', lazy=True))
 
+# --- Veritabanı oluşturma (Render’da otomatik olsun) ---
 with app.app_context():
     db.create_all()
 
@@ -49,9 +54,11 @@ def register():
         email = request.form.get('email')
         password = request.form.get('password')
         gender = request.form.get('gender')
+
         if not username or not email or not password or not gender:
             flash("Lütfen tüm alanları doldurun.", "error")
             return redirect(url_for('register'))
+
         try:
             new_user = User(username=username, email=email, password=password, gender=gender)
             db.session.add(new_user)
@@ -62,6 +69,7 @@ def register():
             db.session.rollback()
             flash("Bu kullanıcı adı veya e-posta zaten kayıtlı.", "error")
             return redirect(url_for('register'))
+
     return render_template('register.html')
 
 # --- Giriş Sayfası ---
@@ -70,7 +78,13 @@ def login():
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
+
+        if not username or not password:
+            flash("Lütfen tüm alanları doldurun.", "error")
+            return redirect(url_for('login'))
+
         user = User.query.filter_by(username=username, password=password).first()
+
         if user:
             session['user'] = user.username
             flash("Başarıyla giriş yaptınız!", "success")
@@ -78,17 +92,20 @@ def login():
         else:
             flash("Kullanıcı adı veya şifre hatalı.", "error")
             return redirect(url_for('login'))
+
     return render_template('login.html')
 
-# --- Dashboard ---
+# --- Kullanıcı Paneli (Dashboard) ---
 @app.route('/dashboard')
 def dashboard():
     if 'user' not in session:
         flash("Lütfen önce giriş yapın.", "error")
         return redirect(url_for('login'))
+
     username = session['user']
     user = User.query.filter_by(username=username).first()
-    return render_template('dashboard.html', username=username, gender=user.gender)
+    gender_icon = "♂️" if user.gender == "Erkek" else "♀️" if user.gender == "Kadın" else "⚧️"
+    return render_template('dashboard.html', username=username, gender_icon=gender_icon)
 
 # --- Sırlar Sayfası ---
 @app.route('/secrets', methods=['GET', 'POST'])
@@ -97,25 +114,28 @@ def secrets():
         flash("Lütfen önce giriş yapın.", "error")
         return redirect(url_for('login'))
 
-    user = User.query.filter_by(username=session['user']).first()
+    username = session['user']
+    user = User.query.filter_by(username=username).first()
+
     if request.method == 'POST':
         content = request.form.get('content')
         if content:
             new_secret = Secret(content=content, user_id=user.id)
             db.session.add(new_secret)
             db.session.commit()
-            flash("Sır başarıyla eklendi!", "success")
+            flash("Sırınız başarıyla paylaşıldı!", "success")
             return redirect(url_for('secrets'))
 
-    secrets_list = Secret.query.order_by(Secret.id.desc()).all()
-    return render_template('secrets.html', secrets=secrets_list, username=user.username)
+    all_secrets = Secret.query.all()
+    return render_template('secrets.html', username=username, secrets=all_secrets)
 
 # --- Çıkış ---
 @app.route('/logout')
 def logout():
-    session.pop('user', None)
+    session.clear()  # önceki flash mesajları da dahil tüm session verilerini temizler
     flash("Çıkış yapıldı.", "info")
     return redirect(url_for('login'))
 
+# --- Uygulama Çalıştırma ---
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
