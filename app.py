@@ -1,7 +1,6 @@
-# -------------------------------------------------------------
-# MySecretIsYourSecret Flask Uygulaması (Render için)
-# -------------------------------------------------------------
-
+# ------------------------------------------------------
+# app.py – MySecretIsYourSecret Flask Uygulaması (Render için)
+# ------------------------------------------------------
 from flask import Flask, render_template, request, redirect, url_for, flash, session
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.exc import IntegrityError
@@ -11,11 +10,10 @@ import os
 app = Flask(__name__)
 app.secret_key = "supersecretkey"
 
-# --- Render PostgreSQL Bağlantısı ---
-# Render veritabanı bilgilerini buraya kendi Render ekranından kopyalayacaksın
+# --- Render PostgreSQL bağlantısı ---
 app.config['SQLALCHEMY_DATABASE_URI'] = (
-    "postgresql://flask_db_gvdu_user:Aob8bxDlwlCqmQYLs3kexSuHMOOvY8Dd@"
-    "dpg-d3vkonjipnbc739o4po0-a/flask_db_gvdu"
+    "postgresql://flask_db_gvdu_user:Aob8bxDlwlCqmQYLs3kexSuHMOOvY8Dd"
+    "@dpg-d3vkonjipnbc739o4po0-a/flask_db_gvdu?sslmode=require"
 )
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -30,7 +28,7 @@ class User(db.Model):
     password = db.Column(db.String(120), nullable=False)
     gender = db.Column(db.String(20), nullable=False)
 
-# --- Veritabanı oluşturma (Render’da otomatik oluşturulmaz) ---
+# --- Veritabanı oluşturma ---
 with app.app_context():
     db.create_all()
 
@@ -43,10 +41,10 @@ def home():
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
-        username = request.form.get('username', '').strip()
-        email = request.form.get('email', '').strip()
-        password = request.form.get('password', '').strip()
-        gender = request.form.get('gender', '').strip()
+        username = request.form.get('username')
+        email = request.form.get('email')
+        password = request.form.get('password')
+        gender = request.form.get('gender')
 
         if not username or not email or not password or not gender:
             flash("Lütfen tüm alanları doldurun.", "error")
@@ -69,15 +67,14 @@ def register():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        username = request.form.get('username', '').strip()
-        password = request.form.get('password', '').strip()
+        username = request.form.get('username')
+        password = request.form.get('password')
 
         if not username or not password:
-            flash("Lütfen kullanıcı adı ve şifre girin.", "error")
+            flash("Lütfen tüm alanları doldurun.", "error")
             return redirect(url_for('login'))
 
         user = User.query.filter_by(username=username, password=password).first()
-
         if user:
             session['user'] = user.username
             flash("Başarıyla giriş yaptınız!", "success")
@@ -98,7 +95,13 @@ def dashboard():
     username = session['user']
     user = User.query.filter_by(username=username).first()
 
-    gender_icon = "♂️" if user.gender == "Erkek" else "♀️" if user.gender == "Kadın" else "⚧️"
+    if user.gender == "Erkek":
+        gender_icon = "♂️"
+    elif user.gender == "Kadın":
+        gender_icon = "♀️"
+    else:
+        gender_icon = "⚧️"
+
     return render_template('dashboard.html', username=username, gender_icon=gender_icon)
 
 # --- Çıkış ---
@@ -108,6 +111,6 @@ def logout():
     flash("Çıkış yapıldı.", "info")
     return redirect(url_for('home'))
 
-# --- Uygulama Çalıştırma (Render için özel ayar) ---
+# --- Uygulama Çalıştırma ---
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
