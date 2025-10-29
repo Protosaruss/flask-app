@@ -103,11 +103,20 @@ def dashboard():
     return render_template('dashboard.html', username=username, gender_icon=gender_icon)
 
 # --- Çıkış ---
+# --- Çıkış (logout) ---
 @app.route('/logout')
 def logout():
+    # Oturumdaki kullanıcıyı sil
     session.pop('user', None)
+
+    # Önceki flash mesajlarını temizle (örneğin "Başarıyla giriş yaptınız")
+    session.pop('_flashes', None)
+
+    # Yeni flash mesajını göster
     flash("Çıkış yapıldı.", "info")
-    return redirect(url_for('home'))
+
+    # Login sayfasına yönlendir
+    return redirect(url_for('login'))
 
 # --- Uygulama Çalıştırma ---
 if __name__ == '__main__':
