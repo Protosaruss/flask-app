@@ -64,7 +64,7 @@ def register():
 
     return render_template('register.html')
 
-# --- Giriş Sayfası ---
+# --- Giriş Sayfası (Kullanıcı adıyla) ---
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -76,15 +76,18 @@ def login():
             return redirect(url_for('login'))
 
         user = User.query.filter_by(username=username, password=password).first()
+
         if user:
             session['user'] = user.username
             flash("Başarıyla giriş yaptınız!", "success")
-            return redirect(url_for('dashboard'))
+            return redirect(url_for('dashboard'))  # ✅ artık login.html'e değil dashboard'a yönlendiriyor
         else:
             flash("Kullanıcı adı veya şifre hatalı.", "error")
             return redirect(url_for('login'))
 
+    # GET isteği olduğunda sadece formu göster
     return render_template('login.html')
+
 
 # --- Kullanıcı Paneli (Dashboard) ---
 @app.route('/dashboard')
