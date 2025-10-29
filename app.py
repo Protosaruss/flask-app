@@ -12,7 +12,6 @@ app = Flask(__name__)
 app.secret_key = "supersecretkey"
 
 # --- Render PostgreSQL bağlantısı ---
-# Render’daki “External Database URL” değerini buraya yapıştır, sslmode=require ekle
 app.config['SQLALCHEMY_DATABASE_URI'] = (
     "postgresql://flask_db_gvdu_user:Aob8bxDlwlCqmQYLs3kexSuHMOOvY8Dd"
     "@dpg-d3vkonjipnbc739o4po0-a/flask_db_gvdu?sslmode=require"
@@ -37,7 +36,7 @@ class Secret(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     user = db.relationship('User', backref=db.backref('secrets', lazy=True))
 
-# --- Veritabanı oluşturma (Render’da otomatik olsun) ---
+# --- Veritabanı oluşturma ---
 with app.app_context():
     db.create_all()
 
@@ -75,6 +74,10 @@ def register():
 # --- Giriş Sayfası ---
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    # Eğer kullanıcı zaten giriş yaptıysa tekrar login ekranına gitmesin
+    if 'user' in session:
+        return redirect(url_for('dashboard'))
+
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
@@ -119,20 +122,23 @@ def secrets():
 
     if request.method == 'POST':
         content = request.form.get('content')
-        if content:
-            new_secret = Secret(content=content, user_id=user.id)
+        if not content or content.strip() == "":
+            flash("Sır boş olamaz.", "error")
+        else:
+            new_secret = Secret(content=content.strip(), user_id=user.id)
             db.session.add(new_secret)
             db.session.commit()
             flash("Sırınız başarıyla paylaşıldı!", "success")
             return redirect(url_for('secrets'))
 
-    all_secrets = Secret.query.all()
+    all_secrets = Secret.query.order_by(Secret.id.desc()).all()
     return render_template('secrets.html', username=username, secrets=all_secrets)
 
 # --- Çıkış ---
 @app.route('/logout')
 def logout():
-    session.clear()  # önceki flash mesajları da dahil tüm session verilerini temizler
+    # Yalnızca oturum verilerini sil, flash mesajlarını koruma
+    session.pop('user', None)
     flash("Çıkış yapıldı.", "info")
     return redirect(url_for('login'))
 
