@@ -1,13 +1,12 @@
 # ------------------------------------------------------
-# app.py – MySecretIsYourSecret (Render için güvenli sürüm)
+# app.py – MySecretIsYourSecret (Anonim kimlik destekli)
 # ------------------------------------------------------
 
 from flask import Flask, render_template, request, redirect, url_for, flash, session
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.exc import IntegrityError
-import os
+import os, random
 
-# --- Flask Başlatma ---
 app = Flask(__name__)
 app.secret_key = "supersecretkey"
 
@@ -18,7 +17,6 @@ app.config['SQLALCHEMY_DATABASE_URI'] = (
 )
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# --- Veritabanı ---
 db = SQLAlchemy(app)
 
 # --- Kullanıcı Modeli ---
@@ -33,18 +31,28 @@ class User(db.Model):
 class Secret(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     content = db.Column(db.Text, nullable=False)
+    alias_name = db.Column(db.String(100), nullable=False)
+    gender_icon = db.Column(db.String(10), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
 # --- Veritabanı oluştur ---
 with app.app_context():
     db.create_all()
 
+# --- Anonim isim üretici ---
+def generate_alias(gender):
+    adjectives = ["Gizemli", "Gece", "Rüzgarlı", "Sır", "Sessiz", "Karanlık", "Hayalet", "Kayıp"]
+    nouns = ["Yazar", "Kedi", "Gölge", "Rüzgar", "Kalem", "Savaşçı", "Fısıltı", "Deniz"]
+    alias = random.choice(adjectives) + random.choice(nouns)
+    icon = "♂️" if gender == "Erkek" else "♀️" if gender == "Kadın" else "⚧️"
+    return alias, icon
+
 # --- Ana Sayfa ---
 @app.route('/')
 def home():
     return render_template('index.html')
 
-# --- Kayıt Sayfası ---
+# --- Kayıt ---
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
@@ -70,7 +78,7 @@ def register():
 
     return render_template('register.html')
 
-# --- Giriş Sayfası ---
+# --- Giriş ---
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -108,9 +116,11 @@ def secrets():
             flash("Boş sır gönderemezsiniz.", "error")
             return redirect(url_for('secrets'))
 
-        new_secret = Secret(content=content, user_id=user.id)
+        alias_name, gender_icon = generate_alias(user.gender)
+        new_secret = Secret(content=content, alias_name=alias_name, gender_icon=gender_icon, user_id=user.id)
         db.session.add(new_secret)
         db.session.commit()
+
         flash("Sırrınız başarıyla paylaşıldı!", "success")
         return redirect(url_for('secrets'))
 
