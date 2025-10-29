@@ -1,11 +1,10 @@
 # ------------------------------------------------------
-# app.py – MySecretIsYourSecret (Anonim kimlik destekli)
+# app.py – MySecretIsYourSecret Flask Uygulaması (Render için)
 # ------------------------------------------------------
-
 from flask import Flask, render_template, request, redirect, url_for, flash, session
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.exc import IntegrityError
-import os, random
+import os
 
 app = Flask(__name__)
 app.secret_key = "supersecretkey"
@@ -31,28 +30,18 @@ class User(db.Model):
 class Secret(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     content = db.Column(db.Text, nullable=False)
-    alias_name = db.Column(db.String(100), nullable=False)
-    gender_icon = db.Column(db.String(10), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user = db.relationship('User', backref=db.backref('secrets', lazy=True))
 
-# --- Veritabanı oluştur ---
 with app.app_context():
     db.create_all()
-
-# --- Anonim isim üretici ---
-def generate_alias(gender):
-    adjectives = ["Gizemli", "Gece", "Rüzgarlı", "Sır", "Sessiz", "Karanlık", "Hayalet", "Kayıp"]
-    nouns = ["Yazar", "Kedi", "Gölge", "Rüzgar", "Kalem", "Savaşçı", "Fısıltı", "Deniz"]
-    alias = random.choice(adjectives) + random.choice(nouns)
-    icon = "♂️" if gender == "Erkek" else "♀️" if gender == "Kadın" else "⚧️"
-    return alias, icon
 
 # --- Ana Sayfa ---
 @app.route('/')
 def home():
     return render_template('index.html')
 
-# --- Kayıt ---
+# --- Kayıt Sayfası ---
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
@@ -60,11 +49,9 @@ def register():
         email = request.form.get('email')
         password = request.form.get('password')
         gender = request.form.get('gender')
-
         if not username or not email or not password or not gender:
             flash("Lütfen tüm alanları doldurun.", "error")
             return redirect(url_for('register'))
-
         try:
             new_user = User(username=username, email=email, password=password, gender=gender)
             db.session.add(new_user)
@@ -75,30 +62,33 @@ def register():
             db.session.rollback()
             flash("Bu kullanıcı adı veya e-posta zaten kayıtlı.", "error")
             return redirect(url_for('register'))
-
     return render_template('register.html')
 
-# --- Giriş ---
+# --- Giriş Sayfası ---
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
-
-        if not username or not password:
-            flash("Lütfen tüm alanları doldurun.", "error")
-            return redirect(url_for('login'))
-
         user = User.query.filter_by(username=username, password=password).first()
         if user:
             session['user'] = user.username
             flash("Başarıyla giriş yaptınız!", "success")
-            return redirect(url_for('secrets'))
+            return redirect(url_for('dashboard'))
         else:
             flash("Kullanıcı adı veya şifre hatalı.", "error")
             return redirect(url_for('login'))
-
     return render_template('login.html')
+
+# --- Dashboard ---
+@app.route('/dashboard')
+def dashboard():
+    if 'user' not in session:
+        flash("Lütfen önce giriş yapın.", "error")
+        return redirect(url_for('login'))
+    username = session['user']
+    user = User.query.filter_by(username=username).first()
+    return render_template('dashboard.html', username=username, gender=user.gender)
 
 # --- Sırlar Sayfası ---
 @app.route('/secrets', methods=['GET', 'POST'])
@@ -107,33 +97,25 @@ def secrets():
         flash("Lütfen önce giriş yapın.", "error")
         return redirect(url_for('login'))
 
-    username = session['user']
-    user = User.query.filter_by(username=username).first()
-
+    user = User.query.filter_by(username=session['user']).first()
     if request.method == 'POST':
         content = request.form.get('content')
-        if not content or not content.strip():
-            flash("Boş sır gönderemezsiniz.", "error")
+        if content:
+            new_secret = Secret(content=content, user_id=user.id)
+            db.session.add(new_secret)
+            db.session.commit()
+            flash("Sır başarıyla eklendi!", "success")
             return redirect(url_for('secrets'))
 
-        alias_name, gender_icon = generate_alias(user.gender)
-        new_secret = Secret(content=content, alias_name=alias_name, gender_icon=gender_icon, user_id=user.id)
-        db.session.add(new_secret)
-        db.session.commit()
-
-        flash("Sırrınız başarıyla paylaşıldı!", "success")
-        return redirect(url_for('secrets'))
-
-    all_secrets = Secret.query.order_by(Secret.id.desc()).all()
-    return render_template('secrets.html', secrets=all_secrets)
+    secrets_list = Secret.query.order_by(Secret.id.desc()).all()
+    return render_template('secrets.html', secrets=secrets_list, username=user.username)
 
 # --- Çıkış ---
 @app.route('/logout')
 def logout():
     session.pop('user', None)
     flash("Çıkış yapıldı.", "info")
-    return redirect(url_for('home'))
+    return redirect(url_for('login'))
 
-# --- Çalıştırma ---
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
