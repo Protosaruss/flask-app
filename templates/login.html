@@ -31,9 +31,6 @@
     {% endwith %}
 
     <form method="POST" action="{{ url_for('login') }}">
-      <a href="{{ url_for('login') }}">
-  <button type="button">Giriş Yap</button>
-</a>
 
       <label for="username">Kullanıcı adı</label>
       <input id="username" name="username" type="text" placeholder="kullaniciadiniz" required />
