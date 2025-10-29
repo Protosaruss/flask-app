@@ -28,6 +28,12 @@ class User(db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(120), nullable=False)
     gender = db.Column(db.String(20), nullable=False)
+    # --- Sır Modeli ---
+class Secret(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    content = db.Column(db.Text, nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+
 
 # --- Veritabanı oluşturma (Render’da otomatik olsun) ---
 with app.app_context():
@@ -117,6 +123,30 @@ def logout():
 
     # Login sayfasına yönlendir
     return redirect(url_for('login'))
+    # --- Sırlar Sayfası ---
+@app.route('/secrets', methods=['GET', 'POST'])
+def secrets():
+    if 'user' not in session:
+        flash("Lütfen önce giriş yapın.", "error")
+        return redirect(url_for('login'))
+
+    username = session['user']
+    user = User.query.filter_by(username=username).first()
+
+    if request.method == 'POST':
+        content = request.form.get('content')
+        if not content.strip():
+            flash("Boş sır gönderemezsiniz.", "error")
+            return redirect(url_for('secrets'))
+
+        new_secret = Secret(content=content, user_id=user.id)
+        db.session.add(new_secret)
+        db.session.commit()
+        flash("Sırrınız başarıyla paylaşıldı!", "success")
+        return redirect(url_for('secrets'))
+
+    all_secrets = Secret.query.order_by(Secret.id.desc()).all()
+    return render_template('secrets.html', secrets=all_secrets)
 
 # --- Uygulama Çalıştırma ---
 if __name__ == '__main__':
